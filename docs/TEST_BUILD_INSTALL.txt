@@ -1,0 +1,15 @@
+Better Lobby Management test build (not for normal play)
+Supports Helldivers 2 Steam build 25480438 / EXE 1.8.46015.0.
+
+The release features plus a read-only recorder that logs every search,
+message and kick (the engine's package queue, the in-use unit table and the
+lobby members around each kick), and two Mod Options Menu choices:
+- Kick Test: Game Kick (the release's kick) or the kick methods that earlier
+  prototypes tried. Plain Kick may crash the host.
+- Promote Notice: Squad Leader Line (the release's message) or a chat line.
+
+Everything is written, one line at a time, to
+%LOCALAPPDATA%/CowboyBingus/Helldivers2/Logs/BetterLobbyManagement.log
+
+Install like the release (Bingus Shared Loader v18 or newer; Mod Options
+Menu for the options), instead of it, never beside it.

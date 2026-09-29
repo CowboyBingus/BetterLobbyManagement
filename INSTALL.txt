@@ -1,0 +1,55 @@
+Better Lobby Management v1.0
+Supports Helldivers 2 Steam build 25480438 / EXE 1.8.46015.0.
+Tested with a host and one friend: DISBAND SQUAD and PROMOTE work. Squads of
+three or four have not been tested.
+
+Install Bingus Shared Loader v18 or newer and import this ZIP into Arsenal or
+HD2MM. Enable and deploy both, then restart Helldivers 2. Keep the shared
+loader as the winning Wwise startup replacement. Mod Options Menu is optional.
+The mod is also an option of Vanilla Plus Megapack; enable only one copy.
+
+Only the host needs Better Lobby Management. The other players need no mod.
+
+When you host a squad on your ship, the escape menu's GAME tab (the one
+listing the squad) gets two buttons under the game's own. Each opens the
+game's confirm dialog (hold to confirm):
+
+- DISBAND SQUAD: posts "The host disbanded the squad." in the chat, then
+  kicks every other player with the game's own KICK; they return to their
+  own ships.
+- PROMOTE <name>: every player sees the game's own line "<name> is the new
+  squad leader", then <name> is kicked to their own ship and hosts it, and
+  you and the rest of the squad join them there. You stay in the squad. Keep
+  the game running until the squad has moved; the log says when it is done
+  or why it stopped, and 15 seconds later how many of the squad arrived.
+
+Keep the escape menu open until the kicked players are gone: the mod kicks
+with the game's own player-menu KICK, so a player's menu may open for a
+moment. After PROMOTE the escape menu closes by itself once the new host has
+left.
+
+<name> is the player whose card you selected last; before that, a friend of
+yours if there is one, otherwise the player with the lowest id. The kicked
+player sees the game's "kicked" message. A successor whose lobby is Friends
+Only or Invite Only refuses a squad that is not on their friends list; the
+squad then stays with you.
+
+Only planned promotions are covered: if the host crashes or quits the game,
+the squad disbands as it does today.
+
+The Galactic Map's lobby scanner recharges in 5 seconds instead of the
+game's 20, so the squads on the globe refresh sooner. Every scan is a lobby
+search; 5 seconds is the shortest setting.
+
+Options (Mod Options Menu):
+- Squad Messages: On (default) or Off.
+- Scanner Recharge (Seconds): 5 (default) to 20, never longer than the
+  game's own.
+- Lobby Region: My Continent Only limits the Galactic Map scanner and
+  quickplay to lobbies hosted on your continent. It makes no extra
+  searches; fewer lobbies may be listed.
+
+Log: %LOCALAPPDATA%/CowboyBingus/Helldivers2/Logs/BetterLobbyManagement.log
+
+https://github.com/CowboyBingus/BingusSharedLoader/releases/latest
+https://github.com/CowboyBingus/ModOptionsMenu/releases/latest
