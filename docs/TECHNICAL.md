@@ -1,8 +1,8 @@
 # Better Lobby Management: how it works
 
-Steam build 25480438 (game.dll SHA-256 `2E2C3B7C...F51E`, EXE 1.8.46015.0 `F5FEE03D...5F06`). Every address below is a game.dll RVA unless marked exe. The exact bytes the mod verifies are in [src/game.lua](../src/game.lua) (`G.CODE`, `G.NATIVES`, `G.EXE_CODE`, `G.ENGINE_SLOTS`, `G.PACKAGE_SLOTS`), [src/menu.lua](../src/menu.lua) (`M.CODE`, `M.NATIVES`), [src/chat.lua](../src/chat.lua) (`C.SEND`, `C.RPC`, `C.CODE`), [src/scanner.lua](../src/scanner.lua) (`S.CODE`) and [src/region.lua](../src/region.lua) (`R.CODE`). A mismatch in `G` keeps the whole mod inactive; a mismatch in `M` disables only the menu buttons (and with them the actions), one in `C` only the squad messages, one in `S` only the scanner, and one in `R` only Lobby Region.
+Steam build 25480438 (game.dll SHA-256 `2E2C3B7C...F51E`, EXE 1.8.46015.0 `F5FEE03D...5F06`). Every address below is a game.dll RVA unless marked exe. The exact bytes the mod verifies are in [src/game.lua](../src/game.lua) (`G.CODE`, `G.NATIVES`, `G.EXE_CODE`, `G.ENGINE_SLOTS`, `G.PACKAGE_SLOTS`), [src/menu.lua](../src/menu.lua) (`M.CODE`, `M.NATIVES`), [src/chat.lua](../src/chat.lua) (`C.SEND`, `C.RPC`, `C.CODE`), [src/scanner.lua](../src/scanner.lua) (`S.CODE`), [src/sos.lua](../src/sos.lua) (`B.DEACTIVATE`, `B.SET_KEY`, `B.CODE`) and [src/region.lua](../src/region.lua) (`R.CODE`). A mismatch in `G` keeps the whole mod inactive; a mismatch in `M` disables only the menu buttons (and with them the actions), one in `C` only the squad messages, one in `S` only the scanner, one in `B` only CANCEL SOS, and one in `R` only Lobby Region.
 
-The mod only reads memory, writes a few data fields (its buttons in the escape menu, a player menu's KICK hold timer, the escape menu's pending close, the scanner's recharge seconds, the Lobby Region table) and calls the game's own functions. It changes no game code.
+The mod only reads memory, writes a few data fields (its buttons in the escape menu, a player menu's KICK hold timer, the escape menu's pending close, the lobby's send countdown, the scanner's recharge seconds, the Lobby Region table) and calls the game's own functions. It changes no game code.
 
 ## Escape menu buttons
 
@@ -21,7 +21,7 @@ The escape screen is `[[0x347CE38]+200]` (0 while the menu is closed; the screen
 | +1832636 | squad panel state (2 while it takes input) |
 | +1989808 | content hidden (another tab) |
 
-The game uses button types 0-4; on the ship a host has types 1 and 3, leaving three of the five slots free. Its select handler (0x18FAD50) and the dialog result dispatch (in 0x18FA5D0) act only on types 0-4; for any other type the select handler still runs its common tail, which shows the shared dialog. The rebuild 0x18FBF50 (host or mode changes) drops extra buttons.
+The game uses button types 0-4 (0x18FB330); on the ship a host has types 1 and 3, in a mission 2 and 3 (and 0 with a squad), leaving two or three of the five slots free. Its select handler (0x18FAD50) and the dialog result dispatch (in 0x18FA5D0) act only on types 0-4; for any other type the select handler still runs its common tail, which shows the shared dialog. The rebuild 0x18FBF50 (host or mode changes) drops extra buttons.
 
 - **Adding** a button: type 5 + action and the new count in one checked write, `add_child(list, button)` (0x144C5C0), `set_enabled(button, 1)` (0x14508E0), and the label through the `#COUNT` template (0xC67C7FAF with a string `COUNT` argument, `set_label` 0x143BF90 or 0x1441720 for wrapped text, `set_string_arg` 0x143C950), as Mod Options Menu does. Added again whenever missing; a refused write is retried only when the menu opens again. An action no longer offered is removed by calling the game's rebuild.
 - **The dialog** is filled while hidden, when the focus lands on one of the mod's buttons: `0x179FDF0(dialog, #COUNT, #COUNT, 0xD94B7608, 0x8A36D40A, 1, 0)` (the game's own confirm and cancel labels and hold-to-confirm), string arguments on the title and body, `measure_text` (0x144E1A0). While showing, the setup would queue instead (state +19372), so it is never called then. When the focus leaves the mod's buttons, `clear_args` (0x143A0F0) takes the mod's text off.
@@ -152,6 +152,80 @@ replaces Lua's `tostring`, which then prints 64-bit FFI numbers as `[cdata (dele
   and the game closes the menu in its next update. With the menu left open, the old host arrived
   on T's ship in the menu's wrist-device pose (v0.4-diag7).
 
+## Texts and translations
+
+Every text the mod shows is a key in `locales/en.lua`. `src/bingus_text.lua` (shared byte-for-byte
+with the other CowboyBingus mods that show text) resolves a key for the current language: English,
+then a translation shipped in `locales/<tag>.lua` (checked with `scripts/translations.py` by the
+build and embedded in the entry), then translation packs registered in `_G.BingusTranslations`.
+A translated text with invalid UTF-8, control characters or other `{placeholders}` than the English
+one is refused alone and logged. Sentences are whole per variant (PROMOTE picked or automatic, a
+Public or another lobby for CANCEL SOS), never assembled from pieces, so translators can order them.
+
+The language is the game's Text Language: the game-state object `[0x3326340]` (the one `G.MODE`
+is read from) holds at +705712 an index into the table of language records at `0x37C5650`, whose
+code string is at +8 (`us` for English). The mod reads it through `api.read_bytes` (guarded,
+16 bytes at most) at the first update, before it registers its Mod Options Menu entries, and each
+time the escape menu opens with a button to show, since the menu's own OPTIONS tab is where the
+language changes. If the read fails it uses Steam's language for the game, then English.
+
+Mod Options Menu v1.1 and later (`ModOptionsMenu.version >= 2`) take each option text as a function
+and call it when they build the MODS page, so option texts follow the language. v1.0 takes strings
+with byte limits (label 64, mod name 40, choice 48, description 400): the mod passes the
+translation if it fits, else the English text. ON and OFF stay the game's own words. The DISBAND
+chat line is sent in the host's language: a chat line carries no language, so the squad reads it as
+if the host had typed it.
+
+## CANCEL SOS
+
+The SOS system is `S = [0x3326BF0]`, the component manager of the SOS beacon (`SosComponent`): `S+8` is the SOS's
+on byte, `S+24` the number of enabled SOS beacon components, `S+0` the engine time it went on (telemetry only).
+
+| Function | What it does |
+| --- | --- |
+| `0x67A9A0(S)` SOS on | when hosting: lobby key 8 = 1, then the privacy setter with 0 (Public); then `S+0` = now, `S+8` = 1 |
+| `0x67AA20(S)` SOS off | when hosting: lobby key 8 = 0, then the privacy setter with the privacy setting `[[0x3326340]+0xAC550]` (0 Public, 1 Friends Only, 2 Invite Only, 3 Friends and Clan); then `S+0` = 0, `S+8` = 0 |
+| `0x134FCA0(ctx, 19, value)` privacy setter | key 19 = 0 while PlayFab's copy of the lobby still has key 8 on, else `value` |
+| `0x10925D0(lobby, key, value)` key setter | the value as text in the lobby wrapper's cache (`+56 + 257·key`), and the key's bits in `+0x18` and `+0x20` when it changed (0x10924D0) |
+
+The game calls them when the beacon activates (0x517FD0: SOS on while the session has fewer than 4 peers), when a
+player joins (0xB5EA90: SOS off once the session holds 4), and when a player leaves (0xB5F140) or a new host takes
+over (0x1087010): SOS on again whenever `S+24 > 0` and `S+8 == 0`. The SOS Beacon stratagem is available only to the
+host, only while `S+8 == 0` and with fewer than 4 players (0x66C920, stratagem type 0x91).
+
+Lobby key 8 is PlayFab `number_key8`: SOS Quickplay (a server-set share of Quickplay searches) requires it, and
+Quickplay's result scoring reads it. Key 19 is `number_key6`: every lobby search requires 0 (Public). The lobby
+wrapper (`ctx+0x1D470`) sends the keys whose `+0x20` bit is set when its countdown (`+0x1B80`, float) reaches 0,
+then restarts the countdown from the online configuration (`[0x347CEE0]+0x3CE68`, 30 s live; 0x109411D). The
+privacy setter and the host's join check (0x108BC70) read keys through the engine lobby (`PFLobbyGetLobbyProperty`),
+so they see what has been sent, not the cache. So the game's own SOS off leaves key 19 at 0 while PlayFab still
+shows the SOS on, which it does until the next send: after an SOS a Friends Only lobby stays Public.
+
+What the mod does:
+
+1. **Offer.** Hosting (host sync state 1, no transition) in a mission with `S+8 == 1`: CANCEL SOS (button type
+   7). The dialog names the privacy setting the lobby returns to.
+2. **Cancel.** SOS off (0x67AA20), key 19 = the privacy setting (0x10925D0), countdown = 0 (one checked write): the
+   game sends keys 8 and 19 together in its update of the same frame.
+3. **Keep it off.** Every frame, 6 direct loads. It ends with a new session or SOS object, a mode other than
+   mission, `S+24 == 0` (no beacon), `S+24` growing (the host called in a new beacon, which the game lists), or the
+   host changing. `S+8 == 1` with the same count is the game's re-arm, which ran in its update after the mod's:
+   SOS off and key 19 again. If key 8's `+0x20` bit is clear, the lobby already sent the re-arm, and the countdown is
+   set to 0 again (one checked write); otherwise the pending send already carries the cancel.
+
+4. **The SOS Beacon's use back.** The SOS Beacon stratagem (type 0x91) has one use per mission (settings
+   `[0x37CB600 + 8·0x91]`: `+0x50` uses per mission, -1 for none; `+0x94` shared by the squad; live: 1 and 0), and the
+   availability check (0x66C880 -> 0x66D3D0) needs uses left in the player's slot. The slots live in the per-player
+   records `[0x347CE50]` (32 records of 0x1690 bytes, their count at `+0x2D200`, the peer id at `+0`): up to 16 slots
+   of 48 bytes from `+0x1C0` (type `+0`, uses left `+4`), their count at `+0x7C0` (0x66F060, 0x66F0F8). On a cancel the
+   mod adds one use to the host's own SOS Beacon slot, never above the uses per mission, and not for a stratagem
+   without a limit or with shared uses (one checked write). Calling in a new beacon then spends it as usual; the
+   first beacon stays, and `S+24` grows, which ends the kept cancel.
+
+Alone, CANCEL SOS is the only action, so the mod reads the game mode (2 loads), in a mission the escape menu (2
+loads), and with the menu open the SOS (2 loads); the menu is followed until CANCEL SOS has left it, because the game
+rebuilds its list when players come and go, not when the SOS stops.
+
 ## Galactic Map scanner
 
 Formerly the standalone Fast Lobby Scanner ([src/scanner.lua](../src/scanner.lua)). Selecting a planet on
@@ -215,10 +289,14 @@ Pinned exactly by the tests with [tests/frame_budget.lua](../tests/frame_budget.
 | Path | Calls per frame |
 | --- | --- |
 | No session | 3 direct loads (2 of them the scanner's check, which every row below includes) |
-| Alone on the ship | 4 direct loads |
+| Alone on the ship | 6 direct loads (v1.0: 4; since v1.1 the game mode, for CANCEL SOS) |
+| Alone in a mission | 8 direct loads; 10 with the escape menu open; 44 with it open and an SOS on |
 | Client of another host | 6 direct loads |
 | Hosting a squad, escape menu closed | 10 direct loads |
-| Hosting a squad, escape menu open, nothing to do | 45 direct loads (one guarded read per new screen) |
+| Hosting a squad, escape menu open, nothing to do | 45 direct loads (one guarded read per new screen); in a mission 47, 49 with an SOS on |
+| An SOS kept off (after CANCEL SOS) | 6 more direct loads |
+| CANCEL SOS (once) | about 30 direct loads, up to 8 guarded reads, 2 native calls (the game's SOS off and key setter), 2 checked writes (2 VirtualQuery: the send countdown and the SOS Beacon's use) |
+| A re-armed SOS switched off again (after a player leaves) | 13 direct loads, 2 native calls; 1 checked write only if the lobby already sent it |
 | The scanner writing its value (login, a setting change, about every 15 min) | 1 VirtualQuery, a store and a read back; a longer running countdown is shortened with 1 guarded read and 1 more VirtualQuery |
 | Adding the buttons (menu opened, after a rebuild) | 1 VirtualQuery for both + 3 native calls each |
 | Focus onto a mod button | 1 dialog setup, 2 string arguments, 2 measures (once per change) |
@@ -230,8 +308,9 @@ Pinned exactly by the tests with [tests/frame_budget.lua](../tests/frame_budget.
 | Promote: closing the escape menu (once, when T has left) | 2 direct loads, 2 guarded reads, 1 checked write (1 VirtualQuery) |
 | Promote: the arrival check (once, 15 s after the move) | one session snapshot (about 20 direct loads); nothing before it is due |
 | Promote waiting | 18 direct loads; searching adds 1 browser call per frame and 4 calls per attempt (1 PlayFab request every half second for 15 s, then every 4 s) |
+| The game's Text Language (first update, and each time the escape menu opens with a button to show) | 5 guarded reads (ReadProcessMemory), no allocation beyond the texts of a rebuild |
 
-Idle frames make no Windows calls and allocate nothing (measured over millions of hooks in the game's `lua51.dll`, interpreted and compiled). Compiled code in those tests, with the scanner's check: 2.6 to 5.0 KB (no session) and 5.2 to 5.6 KB (hosting a squad, menu closed), 2 to 5 traces per path (trace formation varies between runs); the action paths run once per action and stay interpreted. Measured in real play (study `real-play-lm04`, 2026-09-29, one 10-minute session): 0.0026 ms per frame on the ship and 0.0025 ms in client missions; the worst frames were the protection checks on action frames (0.30 and 0.33 ms). The mod's own compiled code was not measured in game.
+Idle frames make no Windows calls and allocate nothing (measured over millions of hooks in the game's `lua51.dll`, interpreted and compiled). Compiled code in those tests, with the scanner's check: 2.6 to 5.0 KB (no session) and 5.2 to 5.6 KB (hosting a squad, menu closed), 2 to 5 traces per path (trace formation varies between runs); the action paths run once per action and stay interpreted. v1.1 against v1.0 in the same session (five runs each): the main loop trace alone on the ship grows by about 0.55 KB (the mode check) and is unchanged hosting a squad (4519 and 4536 bytes); an SOS kept off compiles 8.7 to 10.2 KB in 5 to 8 traces, only while one is kept. Measured in real play (study `real-play-lm04`, 2026-09-29, one 10-minute session): 0.0026 ms per frame on the ship and 0.0025 ms in client missions; the worst frames were the protection checks on action frames (0.30 and 0.33 ms). The mod's own compiled code was not measured in game.
 
 ## Tests
 
@@ -244,6 +323,7 @@ Idle frames make no Windows calls and allocate nothing (measured over millions o
 - **`test_menu`:** the escape-menu buttons, dialog, answer, rebuilds, the Esc close and refusals.
 - **`test_chat`:** the chat line and the new squad leader notice against simulated game natives.
 - **`test_scanner`:** the scanner's writes, re-applies, limits and stops against fake memory, with exact per-frame calls.
+- **`test_sos`:** CANCEL SOS against a simulated SOS system, lobby wrapper and stratagem records: the offer, the cancel's gates and calls, the lobby sent in the same frame, the SOS Beacon's use back (and when not), re-arms caught (also one already sent), what ends a cancel, exact per-frame calls.
 - **`test_addon`:** menu wiring, Mod Options Menu, idle budgets and error containment.
 - **`test_diag`:** the test build's recorder and kick modes against a simulated engine that crashes like the game (a direct kick crashes it; the game's own KICK does not).
 - **`test_entry`:** the generated entry.

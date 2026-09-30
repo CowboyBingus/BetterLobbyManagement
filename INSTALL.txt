@@ -1,7 +1,8 @@
-Better Lobby Management v1.0
+Better Lobby Management v1.1
 Supports Helldivers 2 Steam build 25480438 / EXE 1.8.46015.0.
 Tested with a host and one friend: DISBAND SQUAD and PROMOTE work. Squads of
-three or four have not been tested.
+three or four have not been tested. CANCEL SOS (new in v1.1) was tested with
+a host and one friend; getting the SOS Beacon back has not been tested yet.
 
 Install Bingus Shared Loader v18 or newer and import this ZIP into Arsenal or
 HD2MM. Enable and deploy both, then restart Helldivers 2. Keep the shared
@@ -36,6 +37,17 @@ squad then stays with you.
 
 Only planned promotions are covered: if the host crashes or quits the game,
 the squad disbands as it does today.
+
+In a mission, after you call in an SOS Beacon, the GAME tab gets CANCEL SOS
+while you host (alone or with a squad). Confirming it stops the SOS: SOS
+Quickplay no longer finds your lobby, and the lobby goes back to your
+privacy setting (an SOS makes every lobby Public). When a player leaves
+later, the game would list the SOS again; the mod stops it again. It stays
+stopped until the mission ends or you call in a new SOS Beacon: the SOS
+Beacon has one use per mission, and CANCEL SOS gives it back (the first
+beacon stays where it landed; the usual cooldown applies). With the
+privacy setting Public, ordinary Quickplay can still find your lobby, as it
+finds any Public lobby.
 
 The Galactic Map's lobby scanner recharges in 5 seconds instead of the
 game's 20, so the squads on the globe refresh sooner. Every scan is a lobby

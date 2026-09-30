@@ -1,8 +1,7 @@
-- First public release. Host tools in the escape menu's GAME tab, each confirmed in the game's own hold-to-confirm dialog: DISBAND SQUAD kicks every other player back to their own ship; PROMOTE makes another player the host and moves the whole squad to their ship. Only the host needs the mod.
-- PROMOTE announces the new host with the game's own line "*name* is the new squad leader" (no colon, like the game's join and kick lines), kicks them home with the game's own player-menu KICK, finds their new lobby by its host id and moves the squad there with the game's squad-Quickplay party join. The escape menu closes by itself once the new host has left, so your Helldiver arrives ready to play. 15 seconds after the move the log says how many of the squad arrived.
-- DISBAND posts a chat line from you ("The host disbanded the squad."), then kicks each player with the game's own KICK. Squad Messages in Mod Options Menu turns both messages off.
-- Faster lobby scanner: the Galactic Map's lobby scanner recharges in 5 seconds instead of the game's 20, so the squads on the globe refresh sooner. Scanner Recharge in Mod Options Menu sets 5 to 20 seconds, never longer than the game's own; every scan is one lobby search, so 5 seconds is at most about four times the game's rate. Formerly the unpublished Fast Lobby Scanner.
-- Lobby Region (Mod Options Menu): My Continent Only limits the Galactic Map scanner and quickplay to lobbies hosted on your continent.
-- Tested live with a host and one friend: no crashes, the promote moved the host in 6.9 to 8.2 seconds from the confirm (most of it the game's own join). Squads of three or four have not been tested.
-- Per-frame cost in recorded play, measured while the scanner was still its own mod: 0.003 ms per frame for the lobby tools and 0.001 ms for the scanner, on the ship and in missions; the worst frames, about 0.3 ms, are one memory protection check each on action frames. No LuaJIT code cache flushes.
-- Steam build 25480438 only; requires Bingus Shared Loader v18 or newer. Also an option of Vanilla Plus Megapack v35.
+- New: CANCEL SOS in the escape menu stops the SOS Beacon you called in as host, and keeps it stopped when a slot opens later.
+- CANCEL SOS puts your privacy setting back on the lobby at once, so SOS Quickplay stops finding it; other players need no mod.
+- CANCEL SOS gives the SOS Beacon its use back, so you can call in a new one.
+- Translatable: buttons, dialogs, Mod Options Menu entries and the DISBAND chat line follow the game's Text Language when a translation is installed (see TRANSLATING.md).
+- Player names on the buttons are upper-cased in every script the game's fonts carry.
+- Tested in game with a host and one friend: after CANCEL SOS the mission left the other player's Galactic Map; the restored SOS Beacon use is not yet tested in game.
+- Measured in live play: 0.005 ms per frame on the ship and in missions.

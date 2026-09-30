@@ -17,6 +17,9 @@ local M = dofile(source .. '/menu.lua')
 local D = dofile(source .. '/diag.lua')
 local C = dofile(source .. '/chat.lua')
 local S = dofile(source .. '/scanner.lua')
+local B = dofile(source .. '/sos.lua')
+local Text = dofile(source .. '/bingus_text.lua')
+local LOCALES = {en = dofile(source .. '/../locales/en.lua'), bundled = {}}
 local BUILD = {version = 'v-diag', game_sha256 = 'GAME', exe_sha256 = 'EXE', diag = true}
 local TANGO, CHARLIE = Fake.peer(0x01000000, 0x00000005), Fake.peer(0x0a000000, 0x00000007)
 local DT = 1 / 60
@@ -43,6 +46,8 @@ local function install(setup)
     local world = Fake.new({G = G, R = R})
     Fake.install_config(world, R)
     Fake.install_menu(world, M)
+    -- Before the engine: both fakes own the player records, and the engine's are the ones read here.
+    Fake.install_sos(world, B, G)
     Fake.install_engine(world, D)
     Fake.install_chat(world, C, G)
     Fake.install_scanner(world, S)
@@ -59,7 +64,7 @@ local function install(setup)
     env.update = function() end
     env.shutdown = function() end
     local installer = setfenv(assert(loadfile(source .. '/addon.lua')), env)()
-    installer(function() return world.api end, G, L, R, M, C, S, setup.build or BUILD, D)
+    installer(function() return world.api end, G, L, R, M, C, S, B, Text, LOCALES, setup.build or BUILD, D)
     return {env = env, world = world, lines = lines, state = env.BetterLobbyManagement}
 end
 -- One game frame: the Lua update (the mod), then the game update and the
@@ -130,7 +135,8 @@ do
             assert((f.writable_data or 0) == 0, label .. ': no page checks')
         end
     end
-    pinned('alone on the ship', {load32 = 3, load64 = 3})
+    -- Since v1.1 alone includes the mode's two loads (CANCEL SOS).
+    pinned('alone on the ship', {load32 = 4, load64 = 4})
     world.put64(Fake.GAME + G.CONTEXT_PTR, 0)
     pinned('no session', {load32 = 1, load64 = 3})
     world.put64(Fake.GAME + G.CONTEXT_PTR, Fake.CTX)

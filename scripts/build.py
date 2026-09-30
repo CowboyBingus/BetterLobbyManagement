@@ -28,17 +28,19 @@ sys.path.insert(0, str(HERE / 'tests'))
 from archive import ARCHIVE, make_archive, resource_hash  # noqa: E402
 from build_addon import entry_source  # noqa: E402
 from run_game_lua import run  # noqa: E402
-from entry import EXE_SHA, GAME_DLL_SHA, NAME, entry_text  # noqa: E402
+from entry import EXE_SHA, GAME_DLL_SHA, NAME, entry_text, locale_files  # noqa: E402
+import translations  # noqa: E402
 
-VERSION = '1.0'
-DIAG_VERSION = '1.0-diag1'
+VERSION = '1.1'
+DIAG_VERSION = '1.1-diag1'
 GUID = 'cf5dfdc5-661d-477c-8ad5-1ae975625f7a'
 TITLE = 'Better Lobby Management'
 DESCRIPTION = ('Host tools in the escape menu: DISBAND SQUAD kicks every other player back to their own ship; '
                'PROMOTE makes another player the host and moves the whole squad to their ship, announced with '
-               "the game's own new squad leader line (other players need no mod). The Galactic Map lobby scanner "
-               'recharges in 5 s instead of 20; optional own-continent lobby filter. Requires Bingus Shared Loader '
-               'v18+; Mod Options Menu v1.0 optional.')
+               "the game's own new squad leader line; CANCEL SOS stops your SOS Beacon in a mission and keeps it "
+               'stopped when a slot opens (other players need no mod). The Galactic Map lobby scanner recharges in '
+               '5 s instead of 20; optional own-continent lobby filter. Requires Bingus Shared Loader v18+; Mod '
+               'Options Menu v1.0 optional.')
 DIAG_DESCRIPTION = ('TEST BUILD: logs every search, message and kick (engine package queue, in-use table, lobby '
                     'members), with the Kick Test and Promote Notice options. Not for normal play. Requires Bingus '
                     'Shared Loader v18+; Mod Options Menu v1.0 needed for the options.')
@@ -56,8 +58,10 @@ def lua51_sha256():
 
 def run_tests(entry, version):
     source = str(HERE / 'src')
-    suites = [('test_game.lua', [source]), ('test_lobby.lua', [source]), ('test_region.lua', [source]),
-              ('test_menu.lua', [source]), ('test_chat.lua', [source]), ('test_scanner.lua', [source]), ('test_diag.lua', [source]),
+    suites = [('test_bingus_text.lua', [source]), ('test_locales.lua', [source]),
+              ('test_game.lua', [source]), ('test_lobby.lua', [source]), ('test_region.lua', [source]),
+              ('test_menu.lua', [source]), ('test_chat.lua', [source]), ('test_scanner.lua', [source]),
+              ('test_sos.lua', [source]), ('test_diag.lua', [source]),
               ('test_windows_api.lua', [source, lua51_sha256()]), ('test_addon.lua', [source]),
               ('test_entry.lua', [str(entry), 'v' + version])]
     output = []
@@ -108,6 +112,11 @@ def main():
     build = HERE / 'build'
     build.mkdir(exist_ok=True)
     entry_path = build / 'better_lobby_management.lua'
+    # Bundled translations must be data only and free of errors before they go into the entry.
+    for path in locale_files(HERE)[1:]:
+        problems = translations.check(HERE / 'locales', path.stem, out=lambda line: None)
+        if problems.errors:
+            raise SystemExit('\n'.join(problems.errors))
     entry = entry_text(HERE, version, args.diag)
     entry_path.write_bytes(entry)
     tests = 'skipped\n' if args.skip_tests else run_tests(entry_path, version)
@@ -123,7 +132,8 @@ def main():
               'release_sha256': digest(release.read_bytes()),
               'files': {name: digest(data) for name, data in sorted(files.items())},
               'source_sha256': {p.relative_to(HERE).as_posix(): digest(p.read_bytes())
-                                for folder in ('src', 'tests', 'scripts') for p in sorted((HERE / folder).glob('*.*'))
+                                for folder in ('src', 'tests', 'scripts', 'locales')
+                                for p in sorted((HERE / folder).glob('*.*'))
                                 if p.suffix in ('.lua', '.py')},
               'tests': tests.strip().splitlines()}
     (build / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8', newline='\n')

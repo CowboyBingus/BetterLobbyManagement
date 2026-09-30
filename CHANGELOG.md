@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.1 (2026-09-30)
+
+- New: CANCEL SOS in the escape menu stops the SOS Beacon you called in as host, and keeps it stopped when a slot opens later.
+- CANCEL SOS puts your privacy setting back on the lobby at once, so SOS Quickplay stops finding it; other players need no mod.
+- CANCEL SOS gives the SOS Beacon its use back, so you can call in a new one.
+- Translatable: buttons, dialogs, Mod Options Menu entries and the DISBAND chat line follow the game's Text Language when a translation is installed (see TRANSLATING.md).
+- Player names on the buttons are upper-cased in every script the game's fonts carry.
+- Tested in game with a host and one friend: after CANCEL SOS the mission left the other player's Galactic Map; the restored SOS Beacon use is not yet tested in game.
+- Measured in live play: 0.005 ms per frame on the ship and in missions.
+
 ## v1.0 (2026-09-29)
 
 First public release, as Better Lobby Management (the unpublished prototypes v0.1 to v0.4 were called Lobby Manager).
