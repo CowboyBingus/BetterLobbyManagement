@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.2 (2026-10-04)
+
+- New: Simplified Chinese translation by joyrhyme (pull request #1); it shows when the game's Text Language is Simplified Chinese.
+- The update hook is now Bingus Shared Runtime's guard, the error policy every CowboyBingus mod shares; its log lines name the mod, and its status is `BetterLobbyManagement.guard`.
+- After an error in the game's update or another mod's, the mod pauses: it cancels a running action and puts the Lobby Region table and the scanner's value back. It resumes after 60 frames without such an error and applies its settings again.
+- A pause keeps a CANCEL SOS you made: the first frame after it checks the session, the mission and the beacons again and turns a re-listed SOS off as before.
+- The mod's own errors no longer stop it at the first one: each cancels the running action at the start of the next frame.
+- 8 errors in a burst stop the mod for the session with everything put back; errors more than a minute apart never add up.
+- The shutdown status keeps the first failure (`stopped after: <reason>`), and an error in the mod's own shutdown work can no longer keep the shutdowns of the game and other mods from running.
+- The update passes every argument and return value through to the update it wraps, not just the frame time.
+- Game module hashes come from the shared runtime's cache, so each module file is read once per session for all mods.
+- Every Windows function the mod calls is declared under a private name, so another mod that declared the same functions first can no longer stop it from starting.
+- A translation registry that another mod left incomplete, or a malformed translation pack, no longer stops the mod: missing parts are filled in and bad packs are skipped. A pack forces its language only with `force = true`.
+- Mod Options Menu options are registered again when Mod Options Menu refused or failed the first attempt: up to 8 more tries in the first four minutes. Before, the options stayed missing for the session.
+- With Bingus Shared Loader v19 the Mod Options Menu options are registered once, after every mod has started; with v18 the first-update registration and its retries stay.
+- Measured in live play: 0.004 ms per frame in missions and 0.003 on the ship.
+
 ## v1.1 (2026-09-30)
 
 - New: CANCEL SOS in the escape menu stops the SOS Beacon you called in as host, and keeps it stopped when a slot opens later.

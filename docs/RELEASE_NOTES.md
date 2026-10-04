@@ -1,7 +1,7 @@
-- New: CANCEL SOS in the escape menu stops the SOS Beacon you called in as host, and keeps it stopped when a slot opens later.
-- CANCEL SOS puts your privacy setting back on the lobby at once, so SOS Quickplay stops finding it; other players need no mod.
-- CANCEL SOS gives the SOS Beacon its use back, so you can call in a new one.
-- Translatable: buttons, dialogs, Mod Options Menu entries and the DISBAND chat line follow the game's Text Language when a translation is installed (see TRANSLATING.md).
-- Player names on the buttons are upper-cased in every script the game's fonts carry.
-- Tested in game with a host and one friend: after CANCEL SOS the mission left the other player's Galactic Map; the restored SOS Beacon use is not yet tested in game.
-- Measured in live play: 0.005 ms per frame on the ship and in missions.
+- New: Simplified Chinese translation by joyrhyme (pull request #1); it shows when the game's Text Language is Simplified Chinese.
+- When the game or another mod raises an error, the mod pauses: it cancels a running action and puts the Lobby Region table and the scanner's value back, then resumes after 60 clean frames.
+- A CANCEL SOS you made stays in force through such a pause.
+- The mod's own errors no longer stop it at the first one; 8 errors in one burst stop it for the session with everything put back.
+- Mod Options Menu options are registered again when the first attempt fails, instead of staying missing for the session.
+- Another mod's Windows declarations or an incomplete translation table can no longer stop the mod from starting.
+- Measured in live play: 0.004 ms per frame in missions and 0.003 on the ship.

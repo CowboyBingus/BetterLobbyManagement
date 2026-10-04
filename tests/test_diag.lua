@@ -19,8 +19,9 @@ local C = dofile(source .. '/chat.lua')
 local S = dofile(source .. '/scanner.lua')
 local B = dofile(source .. '/sos.lua')
 local Text = dofile(source .. '/bingus_text.lua')
+local Runtime = dofile(source .. '/bingus_runtime.lua')
 local LOCALES = {en = dofile(source .. '/../locales/en.lua'), bundled = {}}
-local BUILD = {version = 'v-diag', game_sha256 = 'GAME', exe_sha256 = 'EXE', diag = true}
+local BUILD = {version = 'v-diag', game_sha256 = 'GAME', exe_sha256 = 'EXE', diag = true, runtime = Runtime}
 local TANGO, CHARLIE = Fake.peer(0x01000000, 0x00000005), Fake.peer(0x0a000000, 0x00000007)
 local DT = 1 / 60
 
@@ -107,9 +108,9 @@ do
     assert(u.state.diag == 'disabled: engine managers unavailable', u.state.diag)
     u = install({world = function(w) w.put32(Fake.RM + D.IN_USE_SLOTS, 0) end})
     assert(u.state.diag == 'disabled: engine tables unreadable', u.state.diag)
-    local release = install({build = {version = 'v-rel', game_sha256 = 'GAME', exe_sha256 = 'EXE'}})
+    local release = install({build = {version = 'v-rel', game_sha256 = 'GAME', exe_sha256 = 'EXE', runtime = Runtime}})
     assert(release.state.diag == nil and not logged(release, 'diag'), 'release builds have no recorder')
-    local unused = install({build = {version = 'v-rel', game_sha256 = 'GAME', exe_sha256 = 'EXE'},
+    local unused = install({build = {version = 'v-rel', game_sha256 = 'GAME', exe_sha256 = 'EXE', runtime = Runtime},
                             options = options_menu()})
     frames(unused, 1)
     local ids = {}
@@ -397,6 +398,32 @@ do
     assert(logged(t, 'package unloads resumed after 10.0 s'), log_text(t))
 end
 print('PASS: Kick From Render kicks in the render callback with the unload hold')
+
+-- An error in the render kicks: the running action is cancelled at once (the
+-- hold released), and the error goes to the shared runtime's guard at the end
+-- of the next update, as one of the mod's own errors (one log line per burst).
+do
+    local t = install({options = kick_test(KICK_FROM_RENDER)})
+    local world = t.world
+    squad(world, {TANGO})
+    world.give_gear(TANGO, tango_gear())
+    frames(t, 3)
+    local u64, raised = world.api.u64, 0
+    world.api.u64 = function(...)
+        if raised == 0 then raised = 1; error('render broke', 0) end
+        return u64(...)
+    end
+    frame(t, nil, function() assert(t.state.disband()) end)
+    assert(raised == 1 and t.state.errors == 1 and t.state.lobby == 'disband failed: cancelled: error'
+        and world.count('kick_peer') == 0, t.state.lobby)
+    assert(logged(t, 'package unloads resumed: error') and t.state.guard.errors == 0, 'counted on the next update')
+    frame(t)
+    assert(t.state.guard.errors == 1 and logged(t, 'BetterLobbyManagement error: render broke')
+        and t.state.status == 'ready', log_text(t))
+    frames(t, 3)
+    assert(t.state.guard.errors == 1 and t.state.errors == 1, 'counted once')
+end
+print('PASS: an error in the render kicks cancels the action at once and counts as an own error on the next update')
 
 -- The game's own KICK in a two-player squad: the recorder still sees the
 -- departure although the squad is down to the host (missed in test 1).

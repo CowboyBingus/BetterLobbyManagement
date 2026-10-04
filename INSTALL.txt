@@ -1,4 +1,4 @@
-Better Lobby Management v1.1
+Better Lobby Management v1.2
 Supports Helldivers 2 Steam build 25480438 / EXE 1.8.46015.0.
 Tested with a host and one friend: DISBAND SQUAD and PROMOTE work. Squads of
 three or four have not been tested. CANCEL SOS (new in v1.1) was tested with

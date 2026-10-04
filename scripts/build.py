@@ -31,8 +31,8 @@ from run_game_lua import run  # noqa: E402
 from entry import EXE_SHA, GAME_DLL_SHA, NAME, entry_text, locale_files  # noqa: E402
 import translations  # noqa: E402
 
-VERSION = '1.1'
-DIAG_VERSION = '1.1-diag1'
+VERSION = '1.2'
+DIAG_VERSION = '1.2-diag1'
 GUID = 'cf5dfdc5-661d-477c-8ad5-1ae975625f7a'
 TITLE = 'Better Lobby Management'
 DESCRIPTION = ('Host tools in the escape menu: DISBAND SQUAD kicks every other player back to their own ship; '
@@ -46,8 +46,22 @@ DIAG_DESCRIPTION = ('TEST BUILD: logs every search, message and kick (engine pac
                     'Shared Loader v18+; Mod Options Menu v1.0 needed for the options.')
 
 
+# Bingus Shared Runtime files, vendored byte-identical (github.com/CowboyBingus/BingusSharedRuntime): its core (the
+# update guard), its read side (module hashes, cached once per session for every mod) and its hostile-VM test helper.
+# A copy that differs from its pinned SHA-256 fails the build: vendor the files again, never edit them here.
+VENDORED = {'src/bingus_runtime.lua': 'C4450F555F697E583916D18F876412CA96F6963EB1BF4CDAD451EBB906C2F988',
+            'src/bingus_memory.lua': '3973924B1C009CC4E6C863A4EAF87F166899A16DDCB579C3D77AB5465172B416',
+            'tests/hostile_vm.lua': '779B1DFD0A5BB8A2CEAB53EC8729E492838FB90018490A290D1BAFB3D9F938C4'}
+
+
 def digest(data):
     return hashlib.sha256(data).hexdigest().upper()
+
+
+def check_vendored():
+    for path, expected in VENDORED.items():
+        if digest((HERE / path).read_bytes()) != expected:
+            raise SystemExit(f'{path} differs from its Bingus Shared Runtime copy; vendor it again unchanged')
 
 
 def lua51_sha256():
@@ -57,12 +71,14 @@ def lua51_sha256():
 
 
 def run_tests(entry, version):
-    source = str(HERE / 'src')
+    source, lua51 = str(HERE / 'src'), lua51_sha256()
     suites = [('test_bingus_text.lua', [source]), ('test_locales.lua', [source]),
               ('test_game.lua', [source]), ('test_lobby.lua', [source]), ('test_region.lua', [source]),
               ('test_menu.lua', [source]), ('test_chat.lua', [source]), ('test_scanner.lua', [source]),
               ('test_sos.lua', [source]), ('test_diag.lua', [source]),
-              ('test_windows_api.lua', [source, lua51_sha256()]), ('test_addon.lua', [source]),
+              ('test_windows_api.lua', [source, lua51]),
+              ('test_ffi_names.lua', [source, 'sdk', lua51]), ('test_ffi_names.lua', [source, 'hostile', lua51]),
+              ('test_ffi_names.lua', [source, 'mod-first', lua51]), ('test_addon.lua', [source]),
               ('test_entry.lua', [str(entry), 'v' + version])]
     output = []
     for name, args in suites:
@@ -109,6 +125,7 @@ def main():
     parser.add_argument('--diag', action='store_true', help='build the diagnostic test build')
     args = parser.parse_args()
     version = DIAG_VERSION if args.diag else VERSION
+    check_vendored()
     build = HERE / 'build'
     build.mkdir(exist_ok=True)
     entry_path = build / 'better_lobby_management.lua'

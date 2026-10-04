@@ -176,6 +176,16 @@ translation if it fits, else the English text. ON and OFF stay the game's own wo
 chat line is sent in the host's language: a chat line carries no language, so the squad reads it as
 if the host had typed it.
 
+The options are registered on the first update. While the installed Mod Options Menu leaves one
+unregistered (a refusal, an error), checks run 1, 3, 7 ... 255 s later (8 at most): each registers
+what is missing when the `ModOptionsMenu` table was replaced, its `revision` moved or the last attempt
+was refused or failed. Every option is registered, read and given its change callback once per menu
+table, and the log says only when the outcome changes (and once when the checks run out with a menu
+that refuses). The menu installs its table once per session, while the addons load, so with none at
+the first update nothing is retried. While checks remain, a frame adds one Lua call and a comparison;
+once everything is registered, with no menu, or once the checks are used up, nothing is looked at any
+more.
+
 ## CANCEL SOS
 
 The SOS system is `S = [0x3326BF0]`, the component manager of the SOS beacon (`SosComponent`): `S+8` is the SOS's
@@ -253,9 +263,10 @@ mod writes `min(setting, game value)` (one memory protection check, a direct sto
 shortens a running countdown that is longer. Game values outside 1 to 3600 are left alone; one below the
 setting is kept. The code checks (`S.CODE`: the reader, the countdown update, and a scanner setter that ties
 `[0x347CE80]` to the scanner fields) disable only the scanner when they do not match. The scanner stops,
-putting the game's value back if the field still holds the mod's, after a failed write, an error, or more
-than 500 rewrites in a session (another writer). The game rewriting its usual value every 15 minutes is
-counted, not logged.
+putting the game's value back if the field still holds the mod's, after a failed write, when the mod stops
+(see Errors), or after more than 500 rewrites in a session (another writer). A pause puts the value back the
+same way, and the first check after it confirms the object again and writes the setting. The game rewriting
+its usual value every 15 minutes is counted, not logged.
 
 ## Lobby Region
 
@@ -280,7 +291,36 @@ The config download (0x103EF00) replaces +0xC050 with a whole new table only whe
 - A changed download shows up as a new checksum. The check every 120 frames (config pointer, both checksums, the continent, and each written entry's key and value) then plans and writes again.
 - Restoring puts flipped values back and removes added entries. That gives back the server's table byte for byte: no server entry's probe path crosses a slot that was empty when the table was built.
 
-Restoring happens when the option is switched off, at shutdown and after any error.
+Restoring happens when the option is switched off, at shutdown, when the mod pauses (the table is written again
+when it resumes) and when it stops (see Errors).
+
+## Errors
+
+The update hook is Bingus Shared Runtime's guard (`runtime.guard` in `src/bingus_runtime.lua`, an unchanged copy),
+the policy every CowboyBingus mod shares. Each frame it runs the mod's step under `pcall`, then the update below.
+Its log lines (the first error of a burst, a pause, a resume, a stop) name the mod, and its status is
+`BingusRuntime.statuses.BetterLobbyManagement` (also `BetterLobbyManagement.guard`).
+
+- The update below the mod (the game's, or a mod loaded earlier) runs outside `pcall`, with every argument and
+  return value, so its errors reach the game unchanged. One that raised is seen on the next frame.
+- That frame pauses the mod: a running action is cancelled (queued kicks dropped, an unload hold released), the
+  Lobby Region table and the scanner's field are put back, and a confirm dialog in progress and the chosen
+  successor are forgotten. Nothing is read until the updates below have returned on 60 frames in a row; the next
+  frame applies the settings again (Lobby Region, the scanner's value).
+- A kept SOS cancel is the player's choice and stays through a pause. Nothing keeps it up while paused; on the
+  first frame after the pause the keep checks the session, the SOS object, the mission, the beacons and the host
+  again from fresh reads before it acts, so a re-listed SOS is turned off again and a cancel gone stale ends with
+  its usual reason.
+- The mod's own errors are counted, and the first of a burst is logged (its message, without a traceback). The
+  running action is cancelled at the start of the next frame (or by the pause or stop that comes first).
+- 8 errors in a burst stop the mod for the session (the same restoring, once), counted apart for its own errors
+  and for the updates below. Each count starts again after 3600 frames without such an error, so rare errors
+  never add up.
+- The shutdown status keeps the first failure (`stopped after: <reason>`); plain `stopped` means nothing failed.
+  The mod's own shutdown work never keeps the shutdowns below from running.
+
+Per frame this adds a few boolean tests and two counters around the update below: no allocation and no call
+into the game or Windows (unmeasured in game).
 
 ## Per-frame cost
 
@@ -309,8 +349,11 @@ Pinned exactly by the tests with [tests/frame_budget.lua](../tests/frame_budget.
 | Promote: the arrival check (once, 15 s after the move) | one session snapshot (about 20 direct loads); nothing before it is due |
 | Promote waiting | 18 direct loads; searching adds 1 browser call per frame and 4 calls per attempt (1 PlayFab request every half second for 15 s, then every 4 s) |
 | The game's Text Language (first update, and each time the escape menu opens with a button to show) | 5 guarded reads (ReadProcessMemory), no allocation beyond the texts of a rebuild |
+| A pause after an error below the mod (once) | cancelling a running action; 1 VirtualQuery to put the Lobby Region table back (when on); 1 guarded read and 1 VirtualQuery to put the scanner's field back; nothing at all for the next 59 frames |
+| The resume, 60 frames later (once) | 1 VirtualQuery to write the Lobby Region table again (when on); the scanner's first check after a new object (1 guarded read, 1 VirtualQuery for its write, and a longer running countdown shortened as usual) |
+| Mod Options Menu checks while the installed menu leaves an option unregistered (at most 255 s after the first update) | 1 Lua call and 1 comparison a frame; 8 checks at most, each a global lookup plus the registration |
 
-Idle frames make no Windows calls and allocate nothing (measured over millions of hooks in the game's `lua51.dll`, interpreted and compiled). Compiled code in those tests, with the scanner's check: 2.6 to 5.0 KB (no session) and 5.2 to 5.6 KB (hosting a squad, menu closed), 2 to 5 traces per path (trace formation varies between runs); the action paths run once per action and stay interpreted. v1.1 against v1.0 in the same session (five runs each): the main loop trace alone on the ship grows by about 0.55 KB (the mode check) and is unchanged hosting a squad (4519 and 4536 bytes); an SOS kept off compiles 8.7 to 10.2 KB in 5 to 8 traces, only while one is kept. Measured in real play (study `real-play-lm04`, 2026-09-29, one 10-minute session): 0.0026 ms per frame on the ship and 0.0025 ms in client missions; the worst frames were the protection checks on action frames (0.30 and 0.33 ms). The mod's own compiled code was not measured in game.
+Idle frames make no Windows calls and allocate nothing (measured over millions of hooks in the game's `lua51.dll`, interpreted and compiled). The update hook's error policy (see Errors) adds a few boolean tests and two counters per frame: offline, at most 0.1 us per hook interpreted; the idle paths' compiled code medians moved by -0.1 to +0.2 KB, and +2.1 KB while an SOS cancel is kept, within the run-to-run ranges (10 processes each, unmeasured in game). Compiled code in those tests, with the scanner's check: 2.6 to 5.0 KB (no session) and 5.2 to 5.6 KB (hosting a squad, menu closed), 2 to 5 traces per path (trace formation varies between runs); the action paths run once per action and stay interpreted. v1.1 against v1.0 in the same session (five runs each): the main loop trace alone on the ship grows by about 0.55 KB (the mode check) and is unchanged hosting a squad (4519 and 4536 bytes); an SOS kept off compiles 8.7 to 10.2 KB in 5 to 8 traces, only while one is kept. Measured in real play (study `real-play-lm04`, 2026-09-29, one 10-minute session): 0.0026 ms per frame on the ship and 0.0025 ms in client missions; the worst frames were the protection checks on action frames (0.30 and 0.33 ms). The mod's own compiled code was not measured in game.
 
 ## Tests
 
@@ -320,11 +363,13 @@ Idle frames make no Windows calls and allocate nothing (measured over millions o
 - **`test_lobby`:** every action and failure path against a simulated game.
 - **`test_region`:** live keys, writes, restores and downloads.
 - **`test_windows_api`:** the FFI layer, plus the update hook and region check on real memory.
+- **`test_ffi_names`:** the FFI layer after another mod declared the same 15 Windows functions first (as the Windows headers do, and with unusable prototypes), and before any other mod (the real names stay undeclared). The layer declares them under private names (`blm_<Name>` with an `__asm__` label), because LuaJIT keeps the first prototype of a name for the whole state.
 - **`test_menu`:** the escape-menu buttons, dialog, answer, rebuilds, the Esc close and refusals.
 - **`test_chat`:** the chat line and the new squad leader notice against simulated game natives.
 - **`test_scanner`:** the scanner's writes, re-applies, limits and stops against fake memory, with exact per-frame calls.
 - **`test_sos`:** CANCEL SOS against a simulated SOS system, lobby wrapper and stratagem records: the offer, the cancel's gates and calls, the lobby sent in the same frame, the SOS Beacon's use back (and when not), re-arms caught (also one already sent), what ends a cancel, exact per-frame calls.
-- **`test_addon`:** menu wiring, Mod Options Menu, idle budgets and error containment.
+- **`test_addon`:** menu wiring, Mod Options Menu, idle budgets, the update chain (own errors, errors below,
+  the pause and the resume, a kept SOS cancel through a pause) and the shutdown status.
 - **`test_diag`:** the test build's recorder and kick modes against a simulated engine that crashes like the game (a direct kick crashes it; the game's own KICK does not).
 - **`test_entry`:** the generated entry.
 - **`test_package`:** the release ZIP.
