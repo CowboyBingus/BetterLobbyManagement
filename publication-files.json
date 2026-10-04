@@ -9,6 +9,7 @@
   "docs/TECHNICAL.md",
   "docs/TEST_BUILD_INSTALL.txt",
   "locales/en.lua",
+  "locales/zh-Hans.lua",
   "publication-files.json",
   "scripts/build.py",
   "scripts/entry.py",
