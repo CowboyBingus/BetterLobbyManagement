@@ -5,56 +5,56 @@
 return {
     mod = 'better_lobby_management',
     title = 'Better Lobby Management',
-    language = 'en',
+    language = 'zh-Hant',
     strings = {
         -- Escape-menu button (GAME tab, host of a squad on the ship). Upper case like the
         -- game's own buttons. Long labels scroll inside the button.
-        ['button.disband'] = 'DISBAND SQUAD',
+        ['button.disband'] = '解散小隊',
         -- Escape-menu button. {name} is the chosen player's name, upper-cased.
-        ['button.promote'] = 'PROMOTE {name}',
+        ['button.promote'] = '將隊長轉讓給{name}',
         -- Escape-menu button (host in a mission while their SOS Beacon is on).
-        ['button.cancel_sos'] = 'CANCEL SOS',
+        ['button.cancel_sos'] = '取消SoS信標',
 
         -- Title of the game's confirm dialog for DISBAND SQUAD.
-        ['dialog.disband.title'] = 'DISBAND SQUAD',
+        ['dialog.disband.title'] = '解散小隊',
         -- Its text. The dialog holds about three lines.
-        ['dialog.disband.body'] = 'Kick every other player. They return to their own ships.',
+        ['dialog.disband.body'] = '踢出其他玩家，他們會回到自己的船上。',
         -- Title of the confirm dialog for PROMOTE. {name}: the player, upper-cased.
-        ['dialog.promote.title'] = 'PROMOTE {name}',
+        ['dialog.promote.title'] = '將隊長轉讓給{name}',
         -- Its text when the host picked the player (by opening their player menu).
         -- {name}: the player's name as written.
-        ['dialog.promote.body'] = '{name} hosts from their own ship; you and the squad follow.',
+        ['dialog.promote.body'] = '{name}將在其船上擔任隊長，你和其他人會一同前往。',
         -- Its text when the mod picked the player.
-        ['dialog.promote.body_automatic'] = '{name} hosts from their own ship; you and the squad follow. Picked automatically; select a player\'s card to change.',
+        ['dialog.promote.body_automatic'] = '{name}將在其船上擔任隊長，你和其他人會一同前往。此次人選爲自動挑選，可以選擇玩家卡片以手動挑選。',
         -- Title of the confirm dialog for CANCEL SOS.
-        ['dialog.cancel_sos.title'] = 'CANCEL SOS',
+        ['dialog.cancel_sos.title'] = '取消SoS信標',
         -- Its text for a Public lobby.
-        ['dialog.cancel_sos.public'] = 'Stops your SOS, also when a slot opens. Quickplay still finds your Public lobby. You can call in the SOS Beacon again.',
+        ['dialog.cancel_sos.public'] = '就算小隊還有空位，也依然取消SoS信標。若配對隱私設置爲公開，快速匹配依然能搜索到你的任務。可再次呼叫SoS信標。',
         -- Its text for other lobbies. {privacy} is one of the four texts below.
-        ['dialog.cancel_sos.private'] = 'Stops your SOS, also when a slot opens. Your lobby returns to {privacy}. You can call in the SOS Beacon again.',
+        ['dialog.cancel_sos.private'] = '就算小隊還有空位，也依然取消SoS信標。配對隱私變更回{privacy}。可再次呼叫SoS信標。',
         -- The game's privacy settings, as the game names them.
-        ['privacy.friends'] = 'Friends Only',
-        ['privacy.invite'] = 'Invite Only',
+        ['privacy.friends'] = '僅限好友',
+        ['privacy.invite'] = '僅限受邀者',
         ['privacy.clan'] = 'Friends and Clan',
         -- When the setting is not one of the three above.
-        ['privacy.other'] = 'its privacy setting',
+        ['privacy.other'] = '其原本設置',
         -- A player whose name is unknown. {id} is a number in hexadecimal.
-        ['player.unknown'] = 'player {id}',
+        ['player.unknown'] = '玩家{id}',
 
         -- Chat line sent to the whole squad, as from the host, before DISBAND SQUAD
         -- kicks them. It goes out in the host's language.
         ['chat.disband'] = 'The host disbanded the squad.',
 
         -- Mod Options Menu: the mod's name (upper-cased by the menu).
-        ['option.mod'] = 'Better Lobby Management',
-        ['option.region.label'] = 'Lobby Region',
-        ['option.region.default'] = 'Game Default',
-        ['option.region.continent'] = 'My Continent Only',
-        ['option.region.description'] = 'My Continent Only limits the Galactic Map scanner and quickplay to lobbies hosted on your continent (the lowest-latency hosts the game can tell apart). It adds no searches; fewer lobbies may be listed.',
-        ['option.messages.label'] = 'Squad Messages',
-        ['option.messages.description'] = 'Before kicking, the squad is told why. PROMOTE shows the game\'s own "<name> is the new squad leader" line; DISBAND posts a chat message from you.',
-        ['option.scanner.label'] = 'Scanner Recharge (Seconds)',
-        ['option.scanner.description'] = 'Seconds the Galactic Map lobby scanner recharges between scans, from 5 to 20. The game currently uses 20; the mod never makes the wait longer than the game\'s own. Every scan is a lobby search, so a shorter wait searches more often.',
+        ['option.mod'] = '優化小隊管理',
+        ['option.region.label'] = '匹配地區',
+        ['option.region.default'] = '默認',
+        ['option.region.continent'] = '僅限同一大洲',
+        ['option.region.description'] = '使用掃描器和快速匹配時，僅搜索和你處於同一大洲的玩家（遊戲判定爲低延遲的玩家）創建的任務。不會增加搜索次數，且可能導致搜索到的任務變少。',
+        ['option.messages.label'] = '發送通知',
+        ['option.messages.description'] = '踢出玩家前，會發送通知告知原因。轉讓隊長會發送遊戲原有的轉讓隊長通知，解散小隊會由你發出聊天消息。',
+        ['option.scanner.label'] = '掃描器充電時長（秒）',
+        ['option.scanner.description'] = '銀河地圖中，尋找任務的掃描器充電的所需時長，可設置爲5至20，遊戲默認值爲20。本模組不會讓時長超過遊戲默認值。每次掃描即爲一次搜索，所以值越小，搜索越頻繁。',
     },
     -- Mod Options Menu's limits, in characters.
     limits = {
