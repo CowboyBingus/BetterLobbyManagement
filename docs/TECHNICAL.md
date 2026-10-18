@@ -324,17 +324,20 @@ into the game or Windows (unmeasured in game).
 
 ## Per-frame cost
 
-Pinned exactly by the tests with [tests/frame_budget.lua](../tests/frame_budget.lua):
+Pinned exactly by the tests with [tests/frame_budget.lua](../tests/frame_budget.lua).
+
+The idle gate (since v1.2.1): while nothing is in progress (no action, kick, hold, arrival check or kept SOS
+cancel) and the escape screen is closed, a frame reads only the escape screen (`[[0x347CE38]+200]`, 2 direct loads)
+and runs the scanner's check, whatever the session; it makes no session reads. The menu system is confirmed once per
+session with one guarded read; a confirm that fails is tried again every 60th frame while the full frame runs. With
+the screen open, or something in progress, the frame is the full one, plus the gate's 2 loads while the menu is open.
 
 | Path | Calls per frame |
 | --- | --- |
-| No session | 3 direct loads (2 of them the scanner's check, which every row below includes) |
-| Alone on the ship | 6 direct loads (v1.0: 4; since v1.1 the game mode, for CANCEL SOS) |
-| Alone in a mission | 8 direct loads; 10 with the escape menu open; 44 with it open and an SOS on |
-| Client of another host | 6 direct loads |
-| Hosting a squad, escape menu closed | 10 direct loads |
-| Hosting a squad, escape menu open, nothing to do | 45 direct loads (one guarded read per new screen); in a mission 47, 49 with an SOS on |
-| An SOS kept off (after CANCEL SOS) | 6 more direct loads |
+| Escape menu closed, nothing in progress (no session, alone, client or hosting a squad; ship or mission; an SOS on or not) | 4 direct loads (2 of them the scanner's check, which every row below includes); v1.2: 3 with no session to 10 hosting a squad |
+| Alone in a mission, escape menu open | 12 direct loads; 46 with an SOS on |
+| Hosting a squad, escape menu open, nothing to do | 47 direct loads (one guarded read per new screen); in a mission 49, 51 with an SOS on |
+| An SOS kept off (after CANCEL SOS) | the full frame (no idle gate): 14 direct loads alone in a mission with the menu closed |
 | CANCEL SOS (once) | about 30 direct loads, up to 8 guarded reads, 2 native calls (the game's SOS off and key setter), 2 checked writes (2 VirtualQuery: the send countdown and the SOS Beacon's use) |
 | A re-armed SOS switched off again (after a player leaves) | 13 direct loads, 2 native calls; 1 checked write only if the lobby already sent it |
 | The scanner writing its value (login, a setting change, about every 15 min) | 1 VirtualQuery, a store and a read back; a longer running countdown is shortened with 1 guarded read and 1 more VirtualQuery |
@@ -370,6 +373,9 @@ Idle frames make no Windows calls and allocate nothing (measured over millions o
 - **`test_sos`:** CANCEL SOS against a simulated SOS system, lobby wrapper and stratagem records: the offer, the cancel's gates and calls, the lobby sent in the same frame, the SOS Beacon's use back (and when not), re-arms caught (also one already sent), what ends a cancel, exact per-frame calls.
 - **`test_addon`:** menu wiring, Mod Options Menu, idle budgets, the update chain (own errors, errors below,
   the pause and the resume, a kept SOS cancel through a pause) and the shutdown status.
+- **`test_idle_gate`:** the idle gate against v1.2's code (`tests/reference/`) side by side over 4,122 frames
+  (native calls, memory, texts, labels, log lines and status equal), no allocation on idle frames, and the menu
+  system's confirm retry.
 - **`test_diag`:** the test build's recorder and kick modes against a simulated engine that crashes like the game (a direct kick crashes it; the game's own KICK does not).
 - **`test_entry`:** the generated entry.
 - **`test_package`:** the release ZIP.

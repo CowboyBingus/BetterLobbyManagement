@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.1 (2026-10-18)
+
+- Lighter idle check: while the escape menu is closed and nothing is in progress, the lobby tools only look whether the menu has opened, instead of reading the session every frame.
+
 ## v1.2 (2026-10-04)
 
 - New: Simplified Chinese translation by joyrhyme (pull request #1); it shows when the game's Text Language is Simplified Chinese.

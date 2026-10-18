@@ -1,4 +1,4 @@
-# Better Lobby Management v1.2
+# Better Lobby Management v1.2.1
 
 Host tools that Helldivers 2 does not have, in the game's own escape menu:
 
@@ -16,7 +16,7 @@ Host tools that Helldivers 2 does not have, in the game's own escape menu:
 
 ## Install
 
-Close the game, import `Better-Lobby-Management-v1.2.zip` and [Bingus Shared Loader v18 or newer](https://github.com/CowboyBingus/BingusSharedLoader/releases/latest) into Arsenal or HD2MM, enable both and deploy. Keep the shared loader as the winning Wwise startup replacement. [Mod Options Menu](https://github.com/CowboyBingus/ModOptionsMenu/releases/latest) is optional (Squad Messages, Scanner Recharge, Lobby Region). The mod is also an option of [Vanilla Plus Megapack](https://github.com/CowboyBingus/VanillaPlusMegapack/releases/latest); enable only one copy.
+Close the game, import `Better-Lobby-Management-v1.2.1.zip` and [Bingus Shared Loader v18 or newer](https://github.com/CowboyBingus/BingusSharedLoader/releases/latest) into Arsenal or HD2MM, enable both and deploy. Keep the shared loader as the winning Wwise startup replacement. [Mod Options Menu](https://github.com/CowboyBingus/ModOptionsMenu/releases/latest) is optional (Squad Messages, Scanner Recharge, Lobby Region). The mod is also an option of [Vanilla Plus Megapack](https://github.com/CowboyBingus/VanillaPlusMegapack/releases/latest); enable only one copy.
 
 ## Use
 
@@ -55,13 +55,13 @@ A successor whose lobby is Friends Only or Invite Only refuses a squad led by so
 
 ## Cost
 
-Measured in real play for v1.0 (one 10-minute session with a PROMOTE, a DISBAND and a joined mission, when the scanner was still its own mod): 0.003 ms per frame for the lobby tools and 0.001 ms for the scanner, on the ship and in missions. The worst frames, 0.3 ms, were the memory protection checks on action frames. Measured in live play for v1.2 (2026-10-04, two joined missions): 0.004 ms per frame in missions and 0.003 ms on the ship. Per frame: 3 to 6 memory loads when not hosting a squad on the ship (2 of them the scanner's), 8 alone in a mission, 10 while hosting a squad with the escape menu closed, 6 more while an SOS is kept cancelled, and no Windows calls. With the escape menu open while hosting, the mod reads the menu (about 45 loads) and calls the game only when something changes. The memory protection check (about 0.3 ms in game) happens when the mod adds its buttons (once per menu opening), once per kicked player, once per promote (closing the menu), twice per CANCEL SOS (to send the lobby at once and to give the SOS Beacon its use back), when the scanner writes its value (at login, a setting change and about every 15 minutes), and when Lobby Region writes its table. Tests pin these counts exactly; see [how it works](docs/TECHNICAL.md).
+Measured in real play for v1.0 (one 10-minute session with a PROMOTE, a DISBAND and a joined mission, when the scanner was still its own mod): 0.003 ms per frame for the lobby tools and 0.001 ms for the scanner, on the ship and in missions. The worst frames, 0.3 ms, were the memory protection checks on action frames. Measured in live play for v1.2 (2026-10-04, two joined missions): 0.004 ms per frame in missions and 0.003 ms on the ship. Per frame since v1.2.1: 4 memory loads while the escape menu is closed and nothing is in progress, in any session (2 of them the scanner's), 14 alone in a mission while an SOS is kept cancelled, and no Windows calls. With the escape menu open while hosting, the mod reads the menu (about 47 loads) and calls the game only when something changes. The memory protection check (about 0.3 ms in game) happens when the mod adds its buttons (once per menu opening), once per kicked player, once per promote (closing the menu), twice per CANCEL SOS (to send the lobby at once and to give the SOS Beacon its use back), when the scanner writes its value (at login, a setting change and about every 15 minutes), and when Lobby Region writes its table. Tests pin these counts exactly; see [how it works](docs/TECHNICAL.md).
 
 `%LOCALAPPDATA%/CowboyBingus/Helldivers2/Logs/BetterLobbyManagement.log` records the startup check, each action step, why an action stopped, where a promote's time went, how many of the squad arrived, each change of the scanner's value, and each SOS cancel with the lobby's SOS flag and privacy before and after, each re-listing the mod switched off again and why a cancel ended.
 
 ## Build and test
 
-Clone [Bingus Shared Loader](https://github.com/CowboyBingus/BingusSharedLoader) beside this repository (or set `BINGUS_SHARED_LOADER` to its path). `python -B scripts/build.py` assembles `build/better_lobby_management.lua` from `src/` (`scripts/entry.py`), runs every test inside the installed game's `lua51.dll` (the game is not started) and writes `releases/Better-Lobby-Management-v1.2.zip`. `--diag` builds the diagnostic test build instead: it adds a read-only recorder of the kicks and the Kick Test and Promote Notice options.
+Clone [Bingus Shared Loader](https://github.com/CowboyBingus/BingusSharedLoader) beside this repository (or set `BINGUS_SHARED_LOADER` to its path). `python -B scripts/build.py` assembles `build/better_lobby_management.lua` from `src/` (`scripts/entry.py`), runs every test inside the installed game's `lua51.dll` (the game is not started) and writes `releases/Better-Lobby-Management-v1.2.1.zip`. `--diag` builds the diagnostic test build instead: it adds a read-only recorder of the kicks and the Kick Test and Promote Notice options.
 
 [Changes](CHANGELOG.md) · [How it works](docs/TECHNICAL.md)
 

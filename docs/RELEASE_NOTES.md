@@ -1,7 +1,1 @@
-- New: Simplified Chinese translation by joyrhyme (pull request #1); it shows when the game's Text Language is Simplified Chinese.
-- When the game or another mod raises an error, the mod pauses: it cancels a running action and puts the Lobby Region table and the scanner's value back, then resumes after 60 clean frames.
-- A CANCEL SOS you made stays in force through such a pause.
-- The mod's own errors no longer stop it at the first one; 8 errors in one burst stop it for the session with everything put back.
-- Mod Options Menu options are registered again when the first attempt fails, instead of staying missing for the session.
-- Another mod's Windows declarations or an incomplete translation table can no longer stop the mod from starting.
-- Measured in live play: 0.004 ms per frame in missions and 0.003 on the ship.
+- Lighter idle check: while the escape menu is closed and nothing is in progress, the lobby tools only look whether the menu has opened, instead of reading the session every frame.
