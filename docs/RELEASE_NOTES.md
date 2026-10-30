@@ -1,1 +1,0 @@
-- Lighter idle check: while the escape menu is closed and nothing is in progress, the lobby tools only look whether the menu has opened, instead of reading the session every frame.
